@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 제주 환경 포럼 (수정본)</title>
+<!-- Tailwind CSS 및 구글 폰트 -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono&display=swap" rel="stylesheet">
+<!-- Leaflet API (지도 기능 구현용 라이브러리) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  :root {
+    --deep-forest: #0d2b14;
+    --forest: #1a4a24;
+    --leaf: #2d7a3a;
+    --lime: #7ec850;
+    --mist: #c8e6c9;
+    --cream: #f5f0e8;
+    --sand: #e8dcc8;
+    --ocean: #1a4a5c;
+    --sky: #4fa8c5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--cream);
+    color: var(--deep-forest);
+    overflow-x: hidden;
+  }
+
+  /* 네비게이션 바 */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(13, 43, 20, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(126, 200, 80, 0.2);
+  }
+  .nav-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 64px;
+  }
+  .nav-logo {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.1rem; font-weight: 900;
+    color: var(--lime); letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  .nav-logo span { color: var(--mist); font-size: 0.75rem; display: block; font-weight: 400; }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a {
+    color: var(--mist); text-decoration: none;
+    font-size: 0.88rem; font-weight: 500;
+    transition: color 0.2s; position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+    height: 2px; background: var(--lime);
+    transform: scaleX(0); transition: transform 0.2s;
+  }
+  .nav-links a:hover { color: var(--lime); }
+  .nav-links a:hover::after { transform: scaleX(1); }
+  .nav-register {
+    background: var(--lime); color: var(--deep-forest);
+    padding: 0.45rem 1.2rem; border-radius: 2rem;
+    font-size: 0.85rem; font-weight: 700;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .nav-register:hover { background: #9de065; transform: translateY(-1px); }
+
+  /* 히어로 섹션 */
+  #hero {
+    min-height: 100vh;
+    background: linear-gradient(160deg, var(--deep-forest) 0%, #0a3320 40%, #0d3d2a 70%, var(--ocean) 100%);
+    position: relative; overflow: hidden;
+    display: flex; align-items: center;
+  }
+  .hero-noise {
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.35;
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(126,200,80,0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(126,200,80,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  .hero-content {
+    position: relative; z-index: 10;
+    max-width: 1280px; margin: 0 auto;
+    padding: 0 2rem; padding-top: 80px;
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 4rem; align-items: center;
+  }
+  .hero-tag {
+    display: inline-block;
+    background: rgba(126,200,80,0.15);
+    border: 1px solid rgba(126,200,80,0.4);
+    color: var(--lime); font-size: 0.75rem;
+    padding: 0.35rem 0.9rem; border-radius: 2rem;
+    margin-bottom: 1.5rem; letter-spacing: 1.5px;
+    font-family: 'Space Mono', monospace;
+  }
+  .hero-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(2.2rem, 4vw, 3.6rem);
+    font-weight: 900; line-height: 1.2;
+    color: #fff; margin-bottom: 1rem;
+  }
+  .hero-title em { color: var(--lime); font-style: normal; }
+  .hero-subtitle {
+    color: var(--mist); font-size: 1.05rem;
+    margin-bottom: 2.5rem; line-height: 1.8;
+    font-weight: 300;
+  }
+  .hero-meta { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
+  .hero-meta-item { display: flex; align-items: center; gap: 0.75rem; color: var(--mist); font-size: 0.9rem; }
+  .hero-meta-item .icon {
+    width: 32px; height: 32px; background: rgba(126,200,80,0.12);
+    border: 1px solid rgba(126,200,80,0.3); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; flex-shrink: 0;
+  }
+  .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--lime); color: var(--deep-forest);
+    padding: 0.85rem 2.2rem; border-radius: 3rem;
+    font-weight: 700; text-decoration: none;
+    font-size: 0.95rem; transition: all 0.3s;
+    display: inline-block; box-shadow: 0 4px 14px rgba(126,200,80,0.2);
+  }
+  .btn-primary:hover { background: #9de065; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(126,200,80,0.4); }
+  .btn-outline {
+    border: 1px solid rgba(200,230,201,0.4);
+    color: var(--mist); padding: 0.85rem 2.2rem;
+    border-radius: 3rem; font-size: 0.95rem;
+    text-decoration: none; transition: all 0.3s;
+    display: inline-block;
+  }
+  .btn-outline:hover { border-color: var(--lime); color: var(--lime); background: rgba(126,200,80,0.05); }
+
+  /* 한라산 절경 비주얼 박스 (캐릭터 삭제 후 대체) */
+  .hallasan-visual-container {
+    position: relative; width: 100%; height: 500px;
+    border-radius: 24px; overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .hallasan-img-bg {
+    width: 100%; height: 100%;
+    /* 유네스코 세계자연유산 및 제주 한라산 백록담/영실 기암절경 모티브의 고해상도 풍경 */
+    background-image: url('https://images.unsplash.com/photo-1624953331041-e945fe2d14cb?q=80&w=1200&auto=format&fit=crop');
+    background-size: cover; background-position: center;
+    transition: transform 0.7s ease;
+  }
+  .hallasan-visual-container:hover .hallasan-img-bg { transform: scale(1.05); }
+  .hallasan-gradient-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(13,43,20,0.95) 0%, rgba(13,43,20,0.4) 50%, transparent 100%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 2.2rem; color: #fff;
+  }
+  .hallasan-badge {
+    align-self: flex-start; background: var(--lime); color: var(--deep-forest);
+    font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem;
+    border-radius: 4px; margin-bottom: 0.6rem; letter-spacing: 0.5px;
+  }
+  .hallasan-title-text { font-family: 'Noto Serif KR', serif; font-size: 1.6rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem; }
+  .hallasan-desc-text { font-size: 0.85rem; color: var(--mist); line-height: 1.6; opacity: 0.9; font-weight: 300; }
+
+  /* 섹션 공통 스타일 */
+  section { padding: 100px 0; }
+  .section-inner { max-width: 1280px; margin: 0 auto; padding: 0 2rem; }
+  .section-eyebrow {
+    font-family: 'Space Mono', monospace; font-size: 0.75rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--leaf); margin-bottom: 0.8rem; font-weight: 700;
+  }
+  .section-title {
+    font-family: 'Noto Serif KR', serif; font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 900; color: var(--deep-forest); margin-bottom: 1.2rem; line-height: 1.25;
+  }
+  .section-desc { color: #5a6e5c; font-size: 1rem; line-height: 1.8; max-width: 600px; }
+
+  /* 행사 소개 */
+  #about { background: var(--cream); }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 4rem; align-items: start; }
+  .about-card {
+    background: var(--deep-forest); border-radius: 24px; padding: 2.5rem;
+    color: var(--mist); position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(13,43,20,0.1);
+  }
+  .stat-row { display: flex; gap: 2rem; margin-top: 2.5rem; flex-wrap: wrap; }
+  .stat-num { font-family: 'Space Mono', monospace; font-size: 2.4rem; font-weight: 700; color: var(--lime); line-height: 1; }
+  .stat-label { font-size: 0.8rem; color: var(--mist); margin-top: 0.4rem; font-weight: 400; }
+  .green-principles { display: flex; flex-direction: column; gap: 1rem; }
+  .principle-item {
+    display: flex; gap: 1.2rem; align-items: flex-start; padding: 1.2rem;
+    background: #fff; border-left: 4px solid var(--leaf); border-radius: 0 16px 16px 0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+  }
+  .principle-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .principle-text h4 { font-size: 0.95rem; font-weight: 700; color: var(--deep-forest); margin-bottom: 0.25rem; }
+  .principle-text p { font-size: 0.85rem; color: #6a7e6c; line-height: 1.5; }
+
+  /* 행사 일정 및 강화된 세션 배치 스타일 */
+  #schedule { background: var(--deep-forest); color: var(--mist); }
+  #schedule .section-title { color: #fff; }
+  #schedule .section-desc { color: var(--mist); opacity: 0.8; }
+  #schedule .section-eyebrow { color: var(--lime); }
+  
+  .timeline { margin-top: 45px; display: flex; flex-direction: column; gap: 3rem; position: relative; }
+  .timeline::before {
+    content: ''; position: absolute; left: 90px; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(to bottom, var(--lime) 0%, rgba(126,200,80,0.1) 100%);
+  }
+  .tl-item { display: flex; gap: 3rem; align-items: flex-start; position: relative; }
+  .tl-date { width: 90px; flex-shrink: 0; text-align: right; padding-right: 2rem; padding-top: 0.5rem; }
+  .tl-date .day { font-family: 'Space Mono', monospace; font-size: 0.85rem; color: var(--lime); display: block; font-weight: 700; }
+  .tl-date .date-num { font-family: 'Noto Serif KR', serif; font-size: 1.8rem; font-weight: 900; color: #fff; line-height: 1.1; }
+  .tl-dot {
+    position: absolute; left: 85px; top: 1.3rem; width: 12px; height: 12px;
+    background: var(--lime); border-radius: 50%; box-shadow: 0 0 0 6px rgba(126,200,80,0.3); z-index: 10;
+  }
+  .tl-content { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 2.2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+  .tl-title { font-family: 'Noto Serif KR', serif; font-size: 1.35rem; font-weight: 900; color: #fff; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .tl-title .badge { background: var(--lime); color: var(--deep-forest); font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 4px; font-family: 'Space Mono', monospace; }
+  .tl-subtitle { font-size: 0.9rem; color: var(--sky); font-weight: 500; margin-bottom: 1.5rem; }
+  
+  /* 세션 하이라이트 박스 구조 설계 */
+  .session-wrapper { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+  .session-card {
+    background: rgba(13, 43, 20, 0.7);
+    border: 1px solid rgba(126, 200, 80, 0.25);
+    border-left: 5px solid var(--lime);
+    border-radius: 12px; padding: 1.25rem 1.5rem;
+    transition: all 0.25s ease;
+  }
+  .session-card:hover {
+    background: rgba(13, 43, 20, 0.9);
+    border-color: var(--lime);
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(126,200,80,0.1);
+  }
+  .session-meta-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .session-time-tag { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--lime); font-weight: 700; display: flex; align-items: center; gap: 0.3rem; }
+  .session-location-tag { font-size: 0.75rem; color: var(--mist); opacity: 0.85; background: rgba(255,255,255,0.08); padding: 0.15rem 0.5rem; border-radius: 4px; }
+  .session-main-title { font-family: 'Noto Serif KR', serif; font-size: 1.1rem; font-weight: 700; color: #ffffff; line-height: 1.45; }
+  .session-speakers-list { font-size: 0.85rem; color: var(--mist); opacity: 0.9; margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
+
+  .tl-foot-note { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--lime); background: rgba(126,200,80,0.06); padding: 0.8rem 1.2rem; border-radius: 8px; border: 1px solid rgba(126,200,80,0.15); }
+
+  /* 찾아오는 법 및 Leaflet 지도 연동 영역 */
+  #location { background: #f0ede6; }
+  .location-layout { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 3.5rem; margin-top: 4rem; align-items: start; }
+  .map-outer-container {
+    border-radius: 24px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05); background: #fff; position: relative;
+  }
+  #leaflet-map { width: 100%; height: 520px; z-index: 10; }
+  .traffic-guide-list { display: flex; flex-direction: column; gap: 1.2rem; }
+  .traffic-guide-card {
+    background: #fff; border-radius: 16px; padding: 1.4rem;
+    display: flex; align-items: flex-start; gap: 1.2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.03);
+    transition: all 0.2s;
+  }
+  .traffic-guide-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+  .traffic-icon-box {
+    width: 44px; height: 44px; border-radius: 12px; background: var(--deep-forest);
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+  }
+  .traffic-details h4 { font-size: 0.95rem; font-weight: 700; color: var(--deep-forest); margin-bottom: 0.3rem; }
+  .traffic-details p { font-size: 0.84rem; color: #7a8e7c; line-height: 1.6; }
+  .badge-green-inline {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: rgba(45,122,58,0.06); border: 1px solid rgba(45,122,58,0.18);
+    color: var(--leaf); font-size: 0.72rem; font-weight: 700;
+    padding: 0.2rem 0.6rem; border-radius: 2rem; margin-top: 0.5rem;
+  }
+
+  /* 하단 참가 접수 */
+  #register { background: linear-gradient(135deg, var(--deep-forest) 0%, #0a3320 50%, var(--ocean) 100%); position: relative; overflow: hidden; }
+  #register::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 15% 50%, rgba(126,200,80,0.08) 0%, transparent 50%),
+                      radial-gradient(circle at 85% 20%, rgba(79,168,197,0.08) 0%, transparent 40%);
+  }
+  #register .section-title { color: #fff; }
+  #register .section-desc { color: var(--mist); opacity: 0.9; }
+  #register .section-eyebrow { color: var(--lime); }
+  .register-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; margin-top: 4rem; position: relative; }
+  .register-form { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(126,200,80,0.18); border-radius: 24px; padding: 2.5rem; }
+  .form-row { margin-bottom: 1.2rem; }
+  .form-label-text { display: block; font-size: 0.82rem; color: var(--mist); margin-bottom: 0.4rem; font-weight: 500; }
+  .form-input-field {
+    width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 0.8rem 1rem; color: #fff; font-size: 0.9rem; outline: none;
+    transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif;
+  }
+  .form-input-field:focus { border-color: var(--lime); background: rgba(255,255,255,0.12); }
+  .form-btn-submit {
+    width: 100%; background: var(--lime); color: var(--deep-forest); border: none; padding: 1rem;
+    border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+    margin-top: 0.5rem; font-family: 'Noto Sans KR', sans-serif;
+  }
+  .form-btn-submit:hover { background: #9de065; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(126,200,80,0.3); }
+
+  /* 제주 명소 소개 */
+  #jeju { background: #fff; }
+  .jeju-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 4rem; }
+  .jeju-spot-card { border-radius: 20px; overflow: hidden; background: var(--cream); transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+  .jeju-spot-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
+  .jeju-spot-img { height: 210px; overflow: hidden; }
+  .jeju-spot-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+  .jeju-spot-card:hover .jeju-spot-img img { transform: scale(1.04); }
+  .jeju-spot-body { padding: 1.5rem; }
+  .jeju-spot-cat { font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--leaf); margin-bottom: 0.4rem; font-weight: 700; }
+  .jeju-spot-title { font-family: 'Noto Serif KR', serif; font-size: 1.15rem; font-weight: 700; color: var(--deep-forest); margin-bottom: 0.5rem; }
+  .jeju-spot-desc { font-size: 0.85rem; color: #6a7e6c; line-height: 1.6; }
+
+  /* 푸터 */
+  footer { background: var(--deep-forest); padding: 3.5rem 0; text-align: center; color: var(--mist); font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.05); }
+  footer .footer-brand { font-family: 'Noto Serif KR', serif; font-size: 1.3rem; font-weight: 900; color: var(--lime); margin-bottom: 0.6rem; }
+
+  /* 반응형 미디어 쿼리 */
+  @media(max-width:960px){
+    .hero-content, .about-grid, .location-layout, .register-layout, .jeju-cards-grid { grid-template-columns: 1fr; }
+    .hallasan-visual-container { height: 360px; }
+    .timeline::before { left: 40px; }
+    .tl-date { width: 40px; text-align: left; padding-right: 0; margin-bottom: 0.5rem; }
+    .tl-dot { left: 35px; }
+    .tl-item { flex-direction: column; gap: 1rem; }
+    .tl-content { width: 100%; padding: 1.5rem; }
+    .jeju-cards-grid { gap: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 네비게이션 바 -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      JEF 2026
+      <span>제주 환경 포럼</span>
+    </div>
+    <div class="nav-links">
+      <a href="#about">행사 소개</a>
+      <a href="#schedule">행사 일정</a>
+      <a href="#location">찾아오는 법</a>
+      <a href="#jeju">제주 소개</a>
+    </div>
+    <a href="#register" class="nav-register">접수하기</a>
+  </div>
+</nav>
+
+<!-- 히어로 섹션 -->
+<section id="hero">
+  <div class="hero-noise"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div>
+      <div class="hero-tag">🌿 Jeju Environment Forum 2026</div>
+      <h1 class="hero-title">
+        섬에서 세계로,<br>
+        <em>지속가능한</em><br>
+        녹색 미래를 잇다
+      </h1>
+      <p class="hero-subtitle">
+        제주의 자연이 세계를 향해 말합니다.<br>
+        기후위기를 넘어, 생태 공존의 새로운 글로벌 스탠다드를 세웁니다.
+      </p>
+      <div class="hero-meta">
+        <div class="hero-meta-item"><div class="icon">📅</div><span>2026년 10월 1일(목) ~ 10월 5일(월) · 5일간</span></div>
+        <div class="hero-meta-item"><div class="icon">📍</div><span>제주국제컨벤션센터(ICC Jeju) 및 서귀포시 일원</span></div>
+        <div class="hero-meta-item"><div class="icon">👥</div><span>국내외 환경 석학, NGO, 유네스코 관계자 등 3,000여 명 규모</span></div>
+      </div>
+      <div class="hero-cta">
+        <a href="#register" class="btn-primary">포럼 참가 신청</a>
+        <a href="#schedule" class="btn-outline">상세 일정 확인</a>
+      </div>
+    </div>
+    
+    <!-- 메인 비주얼: 기존 초록색 캐릭터를 삭제하고 한라산의 경이로운 절경 배치 -->
+    <div>
+      <div class="hallasan-visual-container">
+        <div class="hallasan-img-bg"></div>
+        <div class="hallasan-gradient-overlay">
+          <span class="hallasan-badge">UNESCO 세계자연유산</span>
+          <h3 class="hallasan-title-text">명산 한라산의 영고한 절경</h3>
+          <p class="hallasan-desc-text">한라산 백록담과 태고의 신비를 간직한 식생 환경은 제주의 자랑이자 전 인류가 함께 가꾸고 보존해야 할 핵심 자연유산 자산입니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 행사 소개 -->
+<section id="about">
+  <div class="section-inner">
+    <div class="section-eyebrow">행사 소개 · Overview</div>
+    <h2 class="section-title">글로벌 자연유산의 섬에서<br>지속가능성을 논하다</h2>
+    <p class="section-desc">제주는 유네스코 생물권보전지역, 세계자연유산, 세계지질공원 등 3관왕을 달성한 세계적인 환경 허브입니다. 본 포럼은 기후변화 최전선에서 글로벌 실천 과제를 도출합니다.</p>
+
+    <div class="about-grid">
+      <div>
+        <div class="about-card">
+          <h3 style="color:#fff; font-family:'Noto Serif KR',serif; font-size:1.25rem; margin-bottom:0.6rem;">포럼 스케일 가이드</h3>
+          <p style="font-size:0.88rem; opacity:0.85; line-height:1.75; font-weight:300;">
+            2026 제주 환경 포럼은 5일간 다각적인 테마 세션, 현장 이동식 포럼, 글로벌 선언문 채택을 통해 실질적인 환경 솔루션을 공유합니다. 탄소 중립을 준수하는 '친환경 그린 가이드라인'에 따라 구축·운영됩니다.
+          </p>
+          <div class="stat-row">
+            <div class="stat-item"><div class="stat-num">5일</div><div class="stat-label">행사 기간</div></div>
+            <div class="stat-item"><div class="stat-num">3,000+</div><div class="stat-label">참석 전문가</div></div>
+            <div class="stat-item"><div class="stat-num">15+</div><div class="stat-label">글로벌 세션</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-family:'Noto Serif KR',serif; font-size:1.2rem; font-weight:700; color:var(--deep-forest); margin-bottom:1.2rem;">🌿 포럼 4대 그린 운영 원칙</h3>
+        <div class="green-principles">
+          <div class="principle-item">
+            <div class="principle-icon">📱</div>
+            <div class="principle-text">
+              <h4>Paperless 모바일 포럼</h4>
+              <p>인쇄용 가이드북 및 아젠다북을 전면 폐지하고 공식 웹/QR 시스템으로 대체합니다.</p>
+            </div>
+          </div>
+          <div class="principle-item">
+            <div class="principle-icon">♻️</div>
+            <div class="principle-text">
+              <h4>Zero Waste 다과 및 음용</h4>
+              <p>일회용 컵 배포를 차단하며 다회용기 순환 시스템과 개인 텀블러 사용을 필수화합니다.</p>
+            </div>
+          </div>
+          <div class="principle-item">
+            <div class="principle-icon">🎨</div>
+            <div class="principle-text">
+              <h4>Eco 친환경 브랜딩</h4>
+              <p>플라스틱 현수막 제작을 원천 금지하고 LED 스크린 및 타이벡 친환경 소재를 활용합니다.</p>
+            </div>
+          </div>
+          <div class="principle-item">
+            <div class="principle-icon">🚌</div>
+            <div class="principle-text">
+              <h4>Carbon Neutral 수송 체계</h4>
+              <p>순수 전기 셔틀버스를 연계 운영하여 참가자의 수송 과정 내 탄소 배출량을 제어합니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 행사 일정 및 핵심 세션 상세화 -->
+<section id="schedule">
+  <div class="section-inner">
+    <div class="section-eyebrow">행사 일정 · Comprehensive Program</div>
+    <h2 class="section-title">날짜별 메인 스케줄 및 전문 세션</h2>
+    <p class="section-desc">날짜별로 배치된 분과 및 핵심 세션을 고도로 강조하여 안내합니다. 각 세션의 주제와 발제 정보, 장소를 확인하세요.</p>
+
+    <div class="timeline">
+      <!-- DAY 1 -->
+      <div class="tl-item">
+        <div class="tl-date">
+          <span class="day">DAY 1</span>
+          <span class="date-num">10/1</span>
+          <div class="tl-dot"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-title">포럼 개막 및 기조세션 데이 <span class="badge">Opening & Vision</span></div>
+          <div class="tl-subtitle">장소: ICC Jeju 삼다홀 및 대회의실 일원</div>
+          
+          <div class="session-wrapper">
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 10:00 - 11:30</span>
+                <span class="session-location-tag">📍 글로벌 메인홀 A</span>
+              </div>
+              <h4 class="session-main-title">포럼 공식 개막식 및 제주특별자치도 환영 개회사</h4>
+              <p class="session-speakers-list">🎙️ 연사: 오영훈 제주특별자치도지사, 환경부 장관, 유네스코 환경사무총장</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 13:30 - 15:30</span>
+                <span class="session-location-tag">📍 제1대회의실</span>
+              </div>
+              <h4 class="session-main-title">[글로벌 기조세션] 기후 격변 시대, 글로벌 도서·연안 지역의 생태적 영구 생존 전략</h4>
+              <p class="session-speakers-list">🎙️ 연사: 헤드 마크 박사 (국제기후변화연구소 석학), 유네스코 생물권보전지역 자문단</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 16:00 - 18:00</span>
+                <span class="session-location-tag">📍 컨퍼런스룸 201</span>
+              </div>
+              <h4 class="session-main-title">[정책좌담회] 지방정부 주도 탄소중립 실천연합 거버넌스 구축 세션</h4>
+              <p class="session-speakers-list">🎙️ 패널: 국내외 5개 시·도 자치단체장 및 글로벌 환경 기구 대표단 공동 참가</p>
+            </div>
+          </div>
+          <div class="tl-foot-note">🌿 페이퍼리스 디지털 QR 체크인 연동 / 홀로그램 미디어아트 오프닝 오프셋 세션</div>
+        </div>
+      </div>
+
+      <!-- DAY 2 -->
+      <div class="tl-item">
+        <div class="tl-date">
+          <span class="day">DAY 2</span>
+          <span class="date-num">10/2</span>
+          <div class="tl-dot"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-title">유네스코 세계자연유산 서밋 <span class="badge">UNESCO Heritage Summit</span></div>
+          <div class="tl-subtitle">장소: ICC Jeju 제2대회의실 및 국제학술실</div>
+          
+          <div class="session-wrapper">
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 09:30 - 11:30</span>
+                <span class="session-location-tag">📍 제2대회의실 A</span>
+              </div>
+              <h4 class="session-main-title">세션 1: 이탈리아 스트롬볼리 화산 영토의 생태 보호 및 지속가능한 탐방 관리 우수사례</h4>
+              <p class="session-speakers-list">🎙️ 발제: 안토니오 카루소 교수 (팔레르모 국립대학 지질학부), 제주 세계유산본부 연구관</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 13:30 - 15:30</span>
+                <span class="session-location-tag">📍 제2대회의실 B</span>
+              </div>
+              <h4 class="session-main-title">세션 2: 미국 하와이 화산 국립공원의 고유종 생물다양성 복원 프로젝트 및 공동 협력 모델</h4>
+              <p class="session-speakers-list">🎙️ 발제: 사라 제킨스 박사 (하와이 화산 생태 연구 네트워크 수석위원)</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 16:00 - 18:00</span>
+                <span class="session-location-tag">📍 국제 세미나룸 202</span>
+              </div>
+              <h4 class="session-main-title">세션 3: 일본 야쿠시마 원시림 및 아이슬란드의 오버투어리즘 제어용 탐방총량제 입법 세미나</h4>
+              <p class="session-speakers-list">🎙️ 토론: 나카무라 켄지 간사 (야쿠시마 생태보전회), 아이슬란드 환경청 자문관</p>
+            </div>
+          </div>
+          <div class="tl-foot-note">🌿 모든 다과 세션은 친환경 인증 제품 및 다회용기 전면 매칭 형태로 진행됩니다.</div>
+        </div>
+      </div>
+
+      <!-- DAY 3 -->
+      <div class="tl-item">
+        <div class="tl-date">
+          <span class="day">DAY 3</span>
+          <span class="date-num">10/3</span>
+          <div class="tl-dot"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-title">5대 지속가능 핵심 분과 세션 <span class="badge">Parallel Deep Dive</span></div>
+          <div class="tl-subtitle">장소: ICC Jeju 분과별 전용 세미나홀 (동시 진행)</div>
+          
+          <div class="session-wrapper">
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 10:00 - 12:00</span>
+                <span class="session-location-tag">📍 제1분과실</span>
+              </div>
+              <h4 class="session-main-title">분과 ① [자원순환]: '2030 플라스틱 제로 제주' 달성을 위한 전주기 규제 및 산업화 인프라</h4>
+              <p class="session-speakers-list">🎙️ 발표: 한국환경연구원 자원순환정책실장, 시민 자원순환 연대 거버넌스</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 10:00 - 12:00</span>
+                <span class="session-location-tag">📍 제2분과실</span>
+              </div>
+              <h4 class="session-main-title">분과 ② [해양생태]: 제주 남방큰돌고래 해양생물보호구역 확대 및 연안 보전 정책 법제화</h4>
+              <p class="session-speakers-list">🎙️ 발표: 국립수산과학원 고래연구센터 연구관, 핫핑크돌핀스 공동 상임대표</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 14:00 - 16:00</span>
+                <span class="session-location-tag">📍 제3분과실</span>
+              </div>
+              <h4 class="session-main-title">분과 ③ [수자원 보호]: 제주의 생명수 '지하수 원천' 보존을 위한 취수 총량제 개편 연구</h4>
+              <p class="session-speakers-list">🎙️ 발표: 제주대학교 수자원공학과 교수, 도정 수자원정책 자문단</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 14:00 - 16:00</span>
+                <span class="session-location-tag">📍 제4분과실</span>
+              </div>
+              <h4 class="session-main-title">분과 ④ [신재생 에너지]: 분산에너지 활성화 특별법 발효에 따른 출력제어 완화 및 ESS 확충안</h4>
+              <p class="session-speakers-list">🎙️ 발표: 제주에너지공사 기술혁신본부장, 전력거래소 전력계통 전문가</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 16:15 - 18:15</span>
+                <span class="session-location-tag">📍 제5분과실</span>
+              </div>
+              <h4 class="session-main-title">분과 ⑤ [생태 관광]: 서귀포 생태마을(오조리, 선흘리) 기반 로컬 주민 상생 투어리즘 모델</h4>
+              <p class="session-speakers-list">🎙️ 발표: 제주생태관광협회 이사진, 로컬 생태마을 공동체 위원장</p>
+            </div>
+          </div>
+          <div class="tl-foot-note">🌿 좌석별 스마트 태블릿 장치가 내장되어 연사 정보 및 실시간 질의응답이 디지털로 이루어집니다.</div>
+        </div>
+      </div>
+
+      <!-- DAY 4 -->
+      <div class="tl-item">
+        <div class="tl-date">
+          <span class="day">DAY 4</span>
+          <span class="date-num">10/4</span>
+          <div class="tl-dot"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-title">현장 결합형 이동식 필드 포럼 <span class="badge">Field Experience</span></div>
+          <div class="tl-subtitle">장소: 제주 동부 및 서귀포권 거점 생태 구역</div>
+          
+          <div class="session-wrapper">
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 09:00 - 13:00</span>
+                <span class="session-location-tag">🚌 코스 A</span>
+              </div>
+              <h4 class="session-main-title">코스 A: 거문오름 숯가마길 세계자연유산 탐방 및 성산일출봉 연안 환경 플로깅 세션</h4>
+              <p class="session-speakers-list">🚶 가이드: 세계유산전문 해설사 동행 및 필드 현장 토론</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 09:00 - 14:00</span>
+                <span class="session-location-tag">🚌 코스 B</span>
+              </div>
+              <h4 class="session-main-title">코스 B: 서귀포 치유의 숲 생태 인프라 탐방 및 난대림 기후 보전 워크숍</h4>
+              <p class="session-speakers-list">🚶 가이드: 산림치유지도사 및 보전 생태학 연구단 연계 좌담</p>
+            </div>
+          </div>
+          <div class="tl-foot-note">🌿 수송 수단으로 저탄소 하이브리드/전기 셔틀이 지원되며 생분해 어메니티 키트가 제공됩니다.</div>
+        </div>
+      </div>
+
+      <!-- DAY 5 -->
+      <div class="tl-item">
+        <div class="tl-date">
+          <span class="day">DAY 5</span>
+          <span class="date-num">10/5</span>
+          <div class="tl-dot"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-title">제주 그린 선언문 채택 및 폐막식 <span class="badge">Closing & Declaration</span></div>
+          <div class="tl-subtitle">장소: ICC Jeju 글로벌 메인홀 A</div>
+          
+          <div class="session-wrapper">
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 10:00 - 11:30</span>
+                <span class="session-location-tag">📍 글로벌 메인홀</span>
+              </div>
+              <h4 class="session-main-title">5대 분과위원회 종합 제언 결의안 브리핑 및 종합 패널 토론</h4>
+              <p class="session-speakers-list">🎙️ 좌장: 각 분과별 수석 좌장 5인 공동 토론 및 정책 건의안 확정</p>
+            </div>
+            
+            <div class="session-card">
+              <div class="session-meta-top">
+                <span class="session-time-tag">⏰ 11:30 - 13:00</span>
+                <span class="session-location-tag">📍 글로벌 메인홀</span>
+              </div>
+              <h4 class="session-main-title">‘제주 그린 선언 2026 (Jeju Green Declaration)’ 디지털 서명 및 공식 폐막 선포</h4>
+              <p class="session-speakers-list">📝 서명 참여: 온/오프라인 참관단 전원 터치스크린 매칭 공동 서명</p>
+            </div>
+          </div>
+          <div class="tl-foot-note">🌿 폐막 시 제공되는 모든 상패는 제주 풍도목(바람에 쓰러진 나무)을 가공한 업사이클링 제품입니다.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- 찾아오는 법 및 지리 정보 기술 (Leaflet API 탑재) -->
+<section id="location">
+  <div class="section-inner">
+    <div class="section-eyebrow">찾아오는 법 · Access Route</div>
+    <h2 class="section-title">제주국제공항에서 행사장 오시는 길</h2>
+    <p class="section-desc">오픈소스를 기반으로 고성능 맵 인터랙션을 지원하는 Leaflet 라이브러리를 사용하여, 공항에서 서귀포 중문 ICC 제주 행사장까지의 직행 경로를 안내합니다.</p>
+    
+    <div class="location-layout">
+      <!-- Leaflet 지도가 렌더링되는 고정 컨테이너 영역 -->
+      <div class="map-outer-container">
+        <div id="leaflet-map"></div>
+      </div>
+      
+      <!-- 상세 교통 가이드 정보 단락 -->
+      <div class="traffic-guide-list">
+        <h3 style="font-family:'Noto Serif KR',serif; font-size:1.15rem; font-weight:700; color:var(--deep-forest); margin-bottom:0.5rem;">🚍 추천 교통 정보</h3>
+        
+        <div class="traffic-guide-card">
+          <div class="traffic-icon-box" style="color: #fff;">🚗</div>
+          <div class="traffic-details">
+            <h4>렌터카 / 자가용 이용 시 (평화로 노선 고속 직행)</h4>
+            <p>제주국제공항 → 공항로 → 평화로(1135번 지방도) → 중문관광단지 → ICC 제주 정문 주차장 입차 (총 거리 약 42km, 약 45~50분 소요)</p>
+            <span class="badge-green-inline">🌿 탄소 배출 저감을 위한 카풀 탑승을 장려합니다.</span>
+          </div>
+        </div>
+
+        <div class="traffic-guide-card">
+          <div class="traffic-icon-box" style="color: #fff;">🚌</div>
+          <div class="traffic-details">
+            <h4>공항 리무진 버스 (600번 연계 노선)</h4>
+            <p>공항 1층 5번 게이트 앞 정류장 탑승 → 신제주 경유 → 평화로 고속 직행 → 중문관광단지 내 주요 호텔 순회 → ICC 제주 정문 하차 (배차 간격 15~20분, 요금 성인 기준 약 5,500원)</p>
+          </div>
+        </div>
+
+        <div class="traffic-guide-card">
+          <div class="traffic-icon-box" style="color: #fff;">⚡</div>
+          <div class="traffic-details">
+            <h4>포럼 전용 무료 친환경 셔틀버스</h4>
+            <p>포럼 기간(10/1~10/5) 동안 제주공항 리무진 버스 주차장 ↔ ICC 제주 간 왕복 셔틀버스를 매 정각 운행합니다.</p>
+            <span class="badge-green-inline">🔋 100% 순수 전기 셔틀 대형 버스 배치</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 제주 명소 소개 (유네스코 기반) -->
+<section id="jeju">
+  <div class="section-inner">
+    <div class="section-eyebrow">제주 유산 · Heritage Hub</div>
+    <h2 class="section-title">글로벌 생태 환경을 상징하는 거점</h2>
+    <p class="section-desc">제주특별자치도 세계유산본부에서 지정 관리하는 가치 높은 핵심 보존 구역들을 소개합니다.</p>
+    
+    <div class="jeju-cards-grid">
+      <div class="jeju-spot-card">
+        <div class="jeju-spot-img">
+          <img src="https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?q=80&w=400&auto=format&fit=crop" alt="거문오름">
+        </div>
+        <div class="jeju-spot-body">
+          <div class="jeju-spot-cat">UNESCO Heritage</div>
+          <h4 class="jeju-spot-title">거문오름 용암동굴계</h4>
+          <p class="jeju-spot-desc">독특한 분화구 지형과 곶자왈 숲이 융합되어 기후 조절 및 생태계 다양성의 핵심을 이룹니다.</p>
+        </div>
+      </div>
+
+      <div class="jeju-spot-card">
+        <div class="jeju-spot-img">
+          <img src="https://images.unsplash.com/photo-1596120211594-a4292869443d?q=80&w=400&auto=format&fit=crop" alt="성산일출봉">
+        </div>
+        <div class="jeju-spot-body">
+          <div class="jeju-spot-cat">UNESCO Heritage</div>
+          <h4 class="jeju-spot-title">성산일출봉 응회구</h4>
+          <p class="jeju-spot-desc">바다 속에서 분출한 화산체로, 빼어난 경관미와 지질학적 학술 가치를 동시 입증한 명소입니다.</p>
+        </div>
+      </div>
+
+      <div class="jeju-spot-card">
+        <div class="jeju-spot-img">
+          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop" alt="해양">
+        </div>
+        <div class="jeju-spot-body">
+          <div class="jeju-spot-cat">Biosphere Reserve</div>
+          <h4 class="jeju-spot-title">서귀포 문섬·범섬 천연보호구역</h4>
+          <p class="jeju-spot-desc">세계적인 연산호 군락과 아열대성 희귀 해양 생물이 공존하는 해양 생태계의 보고입니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 등록 신청 -->
+<section id="register">
+  <div class="section-inner">
+    <div class="section-eyebrow">등록 안내 · RSVP</div>
+    <div class="register-layout">
+      <div>
+        <h2 class="section-title">녹색 미래를 위한<br>위대한 여정에 동참하세요</h2>
+        <p class="section-desc">사전 등록 완료 시 모바일 전용 QR 패스권 발급 및 날짜별 분과 세션의 자료집을 모바일로 실시간 다운로드 하실 수 있습니다.</p>
+      </div>
+      <div>
+        <div class="register-form">
+          <div class="form-row">
+            <label class="form-label-text">성명 (국문/영문)</label>
+            <input type="text" class="form-input-field" placeholder="홍길동 / GILDONG HONG">
+          </div>
+          <div class="form-row">
+            <label class="form-label-text">소속 기관 / 직함</label>
+            <input type="text" class="form-input-field" placeholder="oo대학교 환경공학과 / 연구원">
+          </div>
+          <div class="form-row">
+            <label class="form-label-text">이메일 주소</label>
+            <input type="email" class="form-input-field" placeholder="example@jeju.go.kr">
+          </div>
+          <div class="form-row">
+            <label class="form-label-text">참가 희망 날짜 선택</label>
+            <select class="form-input-field" style="color:#fff; background:#1e3f28;">
+              <option>전 일정 참가 (10/1 ~ 10/5)</option>
+              <option>개막식 및 유네스코 서밋 참가 (10/1 ~ 10/2)</option>
+              <option>분과 세션 및 필드 포럼 참가 (10/3 ~ 10/4)</option>
+            </select>
+          </div>
+          <button class="form-btn-submit">사전 등록 제출하기 (무료)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 푸터 -->
+<footer>
+  <div class="footer-brand">JEF 2026</div>
+  <p>© 2026 제주 환경 포럼 조직위원회. All Rights Reserved.</p>
+  <p style="opacity: 0.5; font-size: 0.75rem; margin-top: 0.5rem;">본 시스템은 종이 인쇄물을 줄이기 위한 Paperless 친환경 표준 포맷으로 설계되었습니다.</p>
+</footer>
+
+<!-- Leaflet 지도 초기화 및 마커/경로선 매핑 스크립트 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. 지도 인스턴스 초기화 (제주국제공항과 서귀포 ICC 제주의 중간 교차점 부근을 타겟으로 세팅)
+    var map = L.map('leaflet-map').setView([33.375, 126.460], 11);
+
+    // 2. OpenStreetMap 오픈소스 타일 레이어 반영
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // 3. 주요 노선별 지리 좌표축 배열화 정의
+    var airportCoord = [33.5114, 126.4925]; // 출발지: 제주국제공항
+    var iccCoord = [33.2402, 126.4211];     // 목적지: ICC 제주 (제주국제컨벤션센터)
+
+    // 실제 평화로(1135번 지방도) 고속화 셔틀버스 직행 라인의 대략적인 주요 지리적 꺾임목 경유지 좌표 매핑
+    var drivingRoutePoints = [
+      airportCoord,
+      [33.4890, 126.4810], // 신제주 오거리 구간
+      [33.4510, 126.4320], // 평화로 시작 진입로 부근
+      [33.3950, 126.3540], // 새별오름 통과 평화로 구간
+      [33.3240, 126.3450], // 동광IC 허브 교차로
+      [33.2840, 126.3950], // 창천 교차로 통과
+      [33.2550, 126.4180], // 중문단지 초입 진입선
+      iccCoord
+    ];
+
+    // 4. 출발지 마커 및 도착지 랜드마크 마커 표시 및 팝업 정보 바인딩
+    var airportMarker = L.marker(airportCoord).addTo(map)
+      .bindPopup('<b>🛫 출발지: 제주국제공항</b><br>무료 셔틀버스 및 리무진 600번 탑승 정류장 연계')
+      .openPopup();
+
+    var iccMarker = L.marker(iccCoord).addTo(map)
+      .bindPopup('<b>📍 행사장: ICC 제주</b><br>제주국제컨벤션센터 (서귀포시 중문관광로 224)');
+
+    // 5. 공항에서 중문 행사장까지의 찾아오는 길을 은은한 대시 스타일의 푸른 해양색(var(--ocean)) 실선으로 드로잉
+    var polylineRoute = L.polyline(drivingRoutePoints, {
+      color: '#1a4a5c',
+      weight: 5,
+      opacity: 0.85,
+      dashArray: '2, 4'
+    }).addTo(map);
+
+    // 6. 맵 뷰 영역을 설정된 모든 요소(출발지, 목적지, 경로선)가 완벽히 들어오도록 자동으로 줌 인/아웃 피팅 조정
+    var boundsGroup = new L.featureGroup([airportMarker, iccMarker, polylineRoute]);
+    map.fitBounds(boundsGroup.getBounds().pad(0.12));
+  });
+</script>
+
+</body>
+</html>
